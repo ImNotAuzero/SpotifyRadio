@@ -6,12 +6,11 @@ I learnt that a station that I listen to when I am in the UK at times just alway
 
 So, this app goes to the radio station, finds out what is being played, goes to spotify, adds the song being played on the radio to a spotify playlist.
 
-## Requirements
-1: ffmpeg, not npm, the actual executable is required.
-2: Create an app on the developer portal of spotify. Please read the documentation from spotify for how to obtain your scoped key and to also append your auth tokens in the functions required.
+## Versions
+V0 use ffmpeg to read what the station was playing, while v1 connects directly to the station web socket.
 
 ## Note
-This will not work with all stations.
-You will have to monitor your station of choice to see what they play if ads are playing etc. -> Noted within index.js
+This might not work with all stations.
+Each station might return a different message object from the ws. So if testing beyond Capital UK - log the data and change where required.
 This app is not designed for production for multiple stations.
 I am not liable for anything.

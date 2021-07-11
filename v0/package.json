@@ -1,0 +1,26 @@
+{
+  "name": "spotifyradio",
+  "version": "1.0.0",
+  "description": "Live radio as a Spotify playlist",
+  "main": "stations/uk/index.js",
+  "dependencies": {
+    "ffmetadata": "^1.7.0",
+    "fs-extra": "^9.1.0",
+    "string-similarity": "^4.0.4",
+    "superagent": "^6.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ImNotAuzero/SpotifyRadio.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ImNotAuzero/SpotifyRadio/issues"
+  },
+  "homepage": "https://github.com/ImNotAuzero/SpotifyRadio#readme"
+}
