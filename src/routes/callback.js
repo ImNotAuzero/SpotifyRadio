@@ -10,9 +10,9 @@ router.get('/', async function(req, res, next) {
 
   let host = req.get('host');
   logger.important('Host attempted connection via address: ' + host);
-  if(!host.includes('someCoolIP')) {
-    return res.status(501).send('Unexpected error... Mismatch state...');
-  }
+  // if(!host.includes('someCoolIP')) {
+  //   return res.status(501).send('Unexpected error... Mismatch state...');
+  // }
 
   logger.important('Attempting to authorise spotify key...');
   let r = await spotify.auth.authorize(req.query.code); // Attempt to authorize the new code
