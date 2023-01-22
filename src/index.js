@@ -19,6 +19,6 @@ app.use(function(err, req, res, next) {
   console.log(err);
 });
 
-app.listen(3000, () => { logger.important('App is running on port 3000'); });
+app.listen(3030, () => { logger.important('App is running on port 3030'); });
 
 module.exports = app;
