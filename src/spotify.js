@@ -1,5 +1,5 @@
-const superagent = require('superagent'), stringSimilarity = require('string-similarity'), logger = require('./utils/logger.js'), stations = require('./stations.json');
-var currAccessToken, currRefreshToken, previousSong = {}, callback = '';
+const superagent = require('superagent'), stringSimilarity = require('string-similarity'), logger = require('./utils/logger.js'), stations = require('./stations.json'), config = require('./config.json');
+var currAccessToken, currRefreshToken, previousSong = {}, callback = config.spotify.callbackURI;
 
 module.exports.stationData = { name: '', playlistID: ''}
 
@@ -225,8 +225,8 @@ module.exports.auth = {
     return new Promise(async (resolve, reject) => {
       superagent.post('https://accounts.spotify.com/api/token')
       .type('x-www-form-urlencoded')
-      .set('Authorization', '')
-      .send('client_id=')
+      .set('Authorization', `Basic ${config.spotify.basicAuth}`)
+      .send(`client_id=${config.spotify.clientId}`)
       .send('grant_type=authorization_code')
       .send(`code=${key}`)
       .send(`redirect_uri=${callback}`)
@@ -246,7 +246,7 @@ module.exports.auth = {
   refreshAccessToken: async function(refreshToken) {
     return new Promise(async (resolve, reject) => {
       superagent.post('https://accounts.spotify.com/api/token')
-      .set('Authorization', ``)
+      .set('Authorization', `Basic ${config.spotify.basicAuth}`)
       .type('x-www-form-urlencoded')
       .send('grant_type=refresh_token')
       .send(`refresh_token=${currRefreshToken}`)
