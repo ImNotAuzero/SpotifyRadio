@@ -1,38 +1,51 @@
 const superagent = require('superagent'), stringSimilarity = require('string-similarity'), logger = require('./utils/logger.js'), stations = require('./stations.json');
-var currAccessToken, currRefreshToken, previousSong = {}, callback = '/callback';
+var currAccessToken, currRefreshToken, previousSong = {}, callback = '';
+
+module.exports.stationData = { name: '', playlistID: ''}
 
 /**
  * Function used to find a song played on the radio on spotify
  * @param {String} title - The name of the song 
  */
 module.exports.findSong = function(title, station) {
-  if(previousSong[station.name] === title.title) return; // Song was played or already added
-  superagent.get('https://api.spotify.com/v1/search')
-  .type('x-www-form-urlencoded')
-  .set('Authorization', `Bearer ${currAccessToken}`)
-  .query(`q=${String(title.title).replace(' ', '-')}`)
-  .query(`type=track`)
-  .end(async (err, res) => {
-    let tracks = res.body.tracks.items;
-    if(err) {
-      logger.log(`${station.name}: Unexpected error when attempting to find a song on spotify...`);
-      logger.log(err.stack);
-    }
-    else {
-      for(let track in tracks) {
-        if(!String(tracks[track].name).includes('Acoustic')) { // Station tested for this does not play Acoustic songs.
-          for(let artist in tracks[track].artists) {
-            logger.log(`${station.name}: Comparing: ${tracks[track].artists[artist].name} against \"${title.artist}\" -> ${stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase())}`);
-            if(stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase()) > 0.32) { // 0.42 best % found from testing
-              previousSong[station.name] = title.title; // Two messages from WS was sometimes recieved, this prevents the song being added twice
-              return this.addToPlaylist(tracks[track], station);
+  logger.log(`${station.name}: { ${title.title} } Attempting to be found on Spotify.`);
+  try {
+    title.title = decodeURI(title.title);
+    title.title = JSON.stringify(title.title);
+    console.log(title);
+    if(previousSong[station.name] === title.title) return; // Song was played or already added
+    superagent.get('https://api.spotify.com/v1/search')
+      .type('x-www-form-urlencoded')
+      .set('Authorization', `Bearer ${currAccessToken}`)
+      .query(`q=${(String(title.title).replace(' ', '-')).replace(/{['’"]}/g, '')}`)
+      .query(`type=track`)
+      .end(async (err, res) => {
+        let tracks = res.body.tracks.items;
+        if(err) {
+          logger.log(`${station.name}: Unexpected error when attempting to find a song on spotify...`);
+          logger.log(err.stack);
+        }
+        else {
+          for(let track in tracks) {
+            if(!String(tracks[track].name).includes('Acoustic')) { // Station tested for this does not play Acoustic songs.
+              for(let artist in tracks[track].artists) {
+                logger.log(`${station.name}: Comparing: ${tracks[track].artists[artist].name} against \"${title.artist}\" -> ${stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase())}`);
+                if(stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase()) > 0.32) { // 0.42 best % found from testing
+                  previousSong[station.name] = title.title; // Two messages from WS was sometimes recieved, this prevents the song being added twice
+                  return this.addToPlaylist(tracks[track], station);
+                }
+                else logger.log(`${station.name}: This shit didn't work this time boss!`); // No song was found that matched
+              }
             }
-            else logger.log(`${station.name}: This shit didn't work this time boss!`); // No song was found that matched
           }
         }
-      }
-    }
-  });
+    });
+  }
+  catch(e) {
+    logger.important(`${station.name} WARNING ERROR MESSAGE BELOW`)
+    logger.log(e);
+    return logger.important(`${station.name}: Unexpected error occured. Not adding song: ${title.title} to playlist.`);
+  }
 }
 
 /**
@@ -70,6 +83,7 @@ module.exports.getTracks = function(station, offset) {
   return new Promise(async (resolve, reject) => {
     superagent.get(`https://api.spotify.com/v1/playlists/${station.playlistID}/tracks`)
       .set('Authorization', `Bearer ${currAccessToken}`)
+      //.query(`fields=items(track(uri))`)
       .query( (offset) ? `fields=items(track(uri))&offset=${offset}` : `fields=items(track(uri))` )
       .end((err, res) => {
         logger.log('Recieved max 100 tracks from the playlist.');
@@ -149,6 +163,7 @@ module.exports.resetPlaylist = async function(startup) {
 
   stations.forEach(async (station) => {
     try {
+      //let totalTracks = await this.getTotalTracks(station);
       let tracks = await this.getTracks(station); // A list of track URIs.
       let totalTracks = tracks.items.length; // Total tracks in the playlist
       let i = 0;
@@ -169,6 +184,16 @@ module.exports.resetPlaylist = async function(startup) {
           body.tracks = [];
         }
       }
+      /*for(let i = 0; i < 10; i++) {
+        let tracks = await this.getTracks(station);
+        if(tracks.items.length < 100 && !startup) return logger.log('Playlist tracks are less than 100.');
+        let body = { tracks: [] }
+        await tracks.items.forEach(item => {
+          body.tracks.push(item.track);
+        });
+        await this.deleteTracks(body, station).catch((err) => logger.log(err.stack)).then(logger.log('Tracks deleted'));
+        return;
+      }*/
     }
     catch(err) {
       logger.log(`Unexpected error occured in resetPlaylist function.`);
@@ -178,6 +203,9 @@ module.exports.resetPlaylist = async function(startup) {
 }
 
 module.exports.auth = {
+  /**
+   * Authorization Code Flow
+   */
   authorize: async function(key) {
     return new Promise(async (resolve, reject) => {
       if(currAccessToken && currRefreshToken) return resolve('500 App already active...');
@@ -197,9 +225,9 @@ module.exports.auth = {
     return new Promise(async (resolve, reject) => {
       superagent.post('https://accounts.spotify.com/api/token')
       .type('x-www-form-urlencoded')
-      .set('Authorization', 'Basic readTheDocs')
-      .send('client_id=readTheDocs')
-      .send('grant_type=readTheDocs')
+      .set('Authorization', '')
+      .send('client_id=')
+      .send('grant_type=authorization_code')
       .send(`code=${key}`)
       .send(`redirect_uri=${callback}`)
       .end((err, res) => {
@@ -218,10 +246,10 @@ module.exports.auth = {
   refreshAccessToken: async function(refreshToken) {
     return new Promise(async (resolve, reject) => {
       superagent.post('https://accounts.spotify.com/api/token')
-      .set('Authorization', `Basic readTheDocs`)
+      .set('Authorization', ``)
       .type('x-www-form-urlencoded')
-      .send('grant_type=readTheDocs')
-      .send(`readTheDocs=${currRefreshToken}`)
+      .send('grant_type=refresh_token')
+      .send(`refresh_token=${currRefreshToken}`)
       .end((err, res) => {
         if(err) { console.log(err); return true; }
         else {
