@@ -20,6 +20,7 @@ module.exports.findSong = function(title, station) {
       .query(`q=${(String(title.title).replace(' ', '-')).replace(/{['’"]}/g, '')}`)
       .query(`type=track`)
       .end(async (err, res) => {
+        if(!res.body.tracks.items || !res.body.tracks || !res.body) return logger.log(`${station.name}: Spotify is having trouble...`);
         let tracks = res.body.tracks.items;
         if(err) {
           logger.log(`${station.name}: Unexpected error when attempting to find a song on spotify...`);
@@ -67,12 +68,11 @@ module.exports.addToPlaylist = function(track, station) {
             logger.log(`${station.name}: Unexpected error when attempting to add a song to a playlist...`);
             logger.log(err.stack);
           }
-          else return resolve(res);
+          else return res;
         });
       }
       else {
-        logger.log(`${station.name}: Song attempted to add is already in the playlist... Ignoring and moving on.`);
-        resolve(true);
+        return logger.log(`${station.name}: Song attempted to add is already in the playlist... Ignoring and moving on.`);
       }
     }
     catch(err) {
