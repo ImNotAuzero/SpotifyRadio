@@ -54,23 +54,29 @@ module.exports.findSong = function(title, station) {
  */
 module.exports.addToPlaylist = function(track, station) {
   return new Promise(async (resolve, reject) => {
-    let bool = await this.checkPreviousTrack(station, track);
-    logger.log(`${station.name}: (${bool}) For current song`);
-    if(bool) {
-      superagent.post(`https://api.spotify.com/v1/playlists/${station.playlistID}/tracks`)
-      .set('Authorization', `Bearer ${currAccessToken}`)
-      .send({ 'uris': [`${track.uri}`] })
-      .end((err, res) => {
-        logger.log('Added some song to the playlist');
-        if(err) {
-          logger.log(`${station.name}: Unexpected error when attempting to add a song to a playlist...`);
-          logger.log(err.stack);
-        }
-        else return res;
-      });
+    try {
+      let bool = await this.checkPreviousTrack(station, track);
+      logger.log(`${station.name}: (${bool}) For current song`);
+      if(bool) {
+        superagent.post(`https://api.spotify.com/v1/playlists/${station.playlistID}/tracks`)
+        .set('Authorization', `Bearer ${currAccessToken}`)
+        .send({ 'uris': [`${track.uri}`] })
+        .end((err, res) => {
+          logger.log('Added some song to the playlist');
+          if(err) {
+            logger.log(`${station.name}: Unexpected error when attempting to add a song to a playlist...`);
+            logger.log(err.stack);
+          }
+          else return resolve(res);
+        });
+      }
+      else {
+        logger.log(`${station.name}: Song attempted to add is already in the playlist... Ignoring and moving on.`);
+        resolve(true);
+      }
     }
-    else {
-      return logger.log(`${station.name}: Song attempted to add is already in the playlist... Ignoring and moving on.`);
+    catch(err) {
+      return resolve(true); // idc about how poor your API stability is spotify
     }
   });
 }
