@@ -20,7 +20,13 @@ module.exports.findSong = function(title, station) {
       .query(`q=${(String(title.title).replace(' ', '-')).replace(/{['’"]}/g, '')}`)
       .query(`type=track`)
       .end(async (err, res) => {
-        if(!res.body.tracks.items || !res.body.tracks || !res.body) return logger.log(`${station.name}: Spotify is having trouble...`);
+        try {
+          if(!res.body.tracks || !res.body.tracks.items || !res.body) return logger.log(`${station.name}: Spotify is having trouble...`);
+        }
+        catch(err) {
+          logger.log(res.body.tracks);
+          return logger.log(`${station.name}: Spotify is having trouble...`);
+        }
         let tracks = res.body.tracks.items;
         if(err) {
           logger.log(`${station.name}: Unexpected error when attempting to find a song on spotify...`);
