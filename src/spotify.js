@@ -134,13 +134,18 @@ module.exports.getTotalTracks = function(station) {
 module.exports.checkPreviousTrack = function(station, track) {
   logger.log(`${station.name}: Checking previous track in spotify playlist...`);
   return new Promise(async (resolve, reject) => {
-    let total = ((await this.getTotalTracks(station)).tracks.total) - 1; // Subtract 1 because arrays start at 0 and Spotify is weird and return queries as 1.
-    logger.log(`${station.name}: Total songs in playlist is ${total}`);
-    if(total == -1) return resolve(true);
-    let lastTrackUri = (await this.getTracks(station, total)).items[0].track.uri; // Retrieve the last track from the returned object from @getTracks
-    logger.log(`${station.name}: Previous track URI on playlist: ${lastTrackUri} & New track URI for current song is: ${track.uri}`);
-    if(lastTrackUri === track.uri) return resolve(false);
-    else return resolve(true);
+    try {
+      let total = ((await this.getTotalTracks(station)).tracks.total) - 1; // Subtract 1 because arrays start at 0 and Spotify is weird and return queries as 1.
+      logger.log(`${station.name}: Total songs in playlist is ${total}`);
+      if(total == -1) return resolve(true);
+      let lastTrackUri = (await this.getTracks(station, total)).items[0].track.uri; // Retrieve the last track from the returned object from @getTracks
+      logger.log(`${station.name}: Previous track URI on playlist: ${lastTrackUri} & New track URI for current song is: ${track.uri}`);
+      if(lastTrackUri === track.uri) return resolve(false);
+      else return resolve(true);
+    }
+    catch(err) {
+      return resolve(false); // Spotify API man...
+    }
   });
 }
 
@@ -157,6 +162,7 @@ module.exports.deleteTracks = function (body, station) {
       .set('Authorization', `Bearer ${currAccessToken}`)
       .type('application/json')
       .send(body)
+      .catch(err => { return resolve(true); })
       .end((err, res) => {
         logger.log('Deleted tracks');
         if(err) reject(err);
