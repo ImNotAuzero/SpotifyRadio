@@ -162,7 +162,6 @@ module.exports.deleteTracks = function (body, station) {
       .set('Authorization', `Bearer ${currAccessToken}`)
       .type('application/json')
       .send(body)
-      .catch(err => { return resolve(true); })
       .end((err, res) => {
         logger.log('Deleted tracks');
         if(err) reject(err);
