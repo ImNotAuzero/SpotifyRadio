@@ -34,15 +34,20 @@ module.exports.findSong = function(title, station) {
         }
         else {
           for(let track in tracks) {
-            if(!String(tracks[track].name).includes('Acoustic')) { // Station tested for this does not play Acoustic songs.
-              for(let artist in tracks[track].artists) {
-                logger.log(`${station.name}: Comparing: ${tracks[track].artists[artist].name} against \"${title.artist}\" -> ${stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase())}`);
-                if(stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase()) > 0.32) { // 0.42 best % found from testing
-                  previousSong[station.name] = title.title; // Two messages from WS was sometimes recieved, this prevents the song being added twice
-                  return this.addToPlaylist(tracks[track], station);
+            try {
+              if(!String(tracks[track].name).includes('Acoustic')) { // Station tested for this does not play Acoustic songs.
+                for(let artist in tracks[track].artists) {
+                  logger.log(`${station.name}: Comparing: ${tracks[track].artists[artist].name} against \"${title.artist}\" -> ${stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase())}`);
+                  if(stringSimilarity.compareTwoStrings(String(tracks[track].artists[artist].name).toLowerCase(), String(title.artist).toLowerCase()) > 0.32) { // 0.42 best % found from testing
+                    previousSong[station.name] = title.title; // Two messages from WS was sometimes recieved, this prevents the song being added twice
+                    return this.addToPlaylist(tracks[track], station);
+                  }
+                  else logger.log(`${station.name}: This shit didn't work this time boss!`); // No song was found that matched
                 }
-                else logger.log(`${station.name}: This shit didn't work this time boss!`); // No song was found that matched
               }
+            }
+            catch(err) {
+              if(err) logger.log(`${station.name}: Having trouble with adding song. - TITLE: ${title.title} = Skipping song... Moving on...`);
             }
           }
         }
