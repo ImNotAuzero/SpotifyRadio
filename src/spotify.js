@@ -24,7 +24,8 @@ module.exports.findSong = function(title, station) {
           if(!res.body.tracks || !res.body.tracks.items || !res.body) return logger.log(`${station.name}: Spotify is having trouble...`);
         }
         catch(err) {
-          logger.log(res.body.tracks);
+          // logger.log(res.body.tracks);
+          logger.error(err);
           return logger.log(`${station.name}: Spotify is having trouble...`);
         }
         let tracks = res.body.tracks.items;
