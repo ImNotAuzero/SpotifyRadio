@@ -8,7 +8,7 @@ module.exports.log = (...args) => {
 
 module.exports.error = (...args) => {
   console.log(chalk.red.bold(`[ERROR] [${this._timestamp()}]`));
-  console.warn(...message);
+  console.warn(...args);
   console.log(chalk.red.bold(`[/ERROR]`));
 };
 
